@@ -6,15 +6,27 @@ export default
       chien : f32;
     };
 
-    
+    // [[block]] 
+    struct Line {
+      time : u32;
+      open : f32;
+      high : f32;
+      low : f32;
+      close : f32;
+      volume : f32;
+    };
+
     [[block]] struct Data {
+      value: array<Line>;
+    };
+
+    [[block]] struct Result {
       value: array<f32>;
     };
 
     [[group(0), binding(0)]] var<storage, read> data : Data;
-    [[group(0), binding(1)]] var<storage, write> result : Data;
+    [[group(0), binding(1)]] var<storage, write> result : Result;
     [[group(0), binding(2)]] var<uniform> params : Params;
-
           
     [[stage(compute), workgroup_size(32,32)]] fn main([[builtin(global_invocation_id)]] global_id : vec3<u32>) {
       // resultMatrix.size = vec2<f32>(firstMatrix.size.x, secondMatrix.size.y);
@@ -39,12 +51,13 @@ export default
 
       // result.value[0] = global_id.x;
       
-      for(var i: i32 = 0; i < 10000; i = i + 1) {
-        if (data.value[i] > f32(25000)){
-          // result.value[0] = data.value[global_id.x];
-          result.value[global_id.x] = f32(65);
-        }
-      }
+      result.value[global_id.x] = data.value[global_id.x].open;
+
+      // for(var i: i32 = 0; i < 10000; i = i + 1) {
+      //   if (data.value[i] > f32(35233)){
+      //     // result.value[0] = data.value[global_id.x];
+      //     result.value[global_id.x] = f32(65);
+      //   }
+      // }
     }
 `
-
