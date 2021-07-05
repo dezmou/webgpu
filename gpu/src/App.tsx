@@ -164,7 +164,9 @@ function App() {
       const trade = new GPUComputer();
       await trade.loadData();
       await trade.initGpu();
-      await trade.bake([58]);
+      for (let i = 0; i < 10; i++) {
+        await trade.bake([58 + i]);
+      }
       // await trade.bake([22]);
     })()
 

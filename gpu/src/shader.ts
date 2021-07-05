@@ -38,14 +38,13 @@ export default
       // result.value[0] = data.value[1];
 
       // result.value[0] = global_id.x;
-          result.value[global_id.x] = f32(65);
       
-      // for(var i: i32 = 0; i < 2000000; i = i + 1) {
-      //   if (data.value[global_id.x] > f32(3000)){
-      //     // result.value[0] = data.value[global_id.x];
-      //     result.value[global_id.x] = f32(65);
-      //   }
-      // }
+      for(var i: i32 = 0; i < 10000; i = i + 1) {
+        if (data.value[i] > f32(25000)){
+          // result.value[0] = data.value[global_id.x];
+          result.value[global_id.x] = f32(65);
+        }
+      }
     }
 `
 
