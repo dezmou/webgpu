@@ -50,7 +50,7 @@ export default
 
       // result.value[0] = global_id.x;
       
-      for(var i: i32 = 0; i < 20000; i = i + 1) {
+      for(var i: i32 = 0; i < 50000; i = i + 1) {
         if (data.value[i].open > f32(40000)){
           result.value[global_id.x] = f32(12);
         }

@@ -155,6 +155,7 @@ class GPUComputer {
     const arrayBuffer = gpuReadBuffer.getMappedRange();
     console.log(new Float32Array(arrayBuffer));
     console.log(performance.now() - time);
+    gpuReadBuffer.destroy()
   }
 }
 
@@ -164,7 +165,7 @@ function App() {
       const trade = new GPUComputer();
       await trade.loadData();
       await trade.initGpu();
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 10000000; i++) {
         await trade.bake([58 + i]);
       }
       // await trade.bake([22]);
