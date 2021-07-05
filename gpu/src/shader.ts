@@ -4,11 +4,11 @@ export default
       value: array<f32>;
     };
 
-    [[group(0), binding(0)]] var<storage, read> firstMatrix : Data;
+    [[group(0), binding(0)]] var<storage, read> data : Data;
     // [[group(0), binding(1)]] var<storage, read> secondMatrix : Data;
-    [[group(0), binding(1)]] var<storage, write> resultMatrix : Data;
+    [[group(0), binding(1)]] var<storage, write> result : Data;
           
-          [[stage(compute)]] fn main([[builtin(global_invocation_id)]] global_id : vec3<u32>) {
+          [[stage(compute), workgroup_size(1)]] fn main([[builtin(global_invocation_id)]] global_id : vec3<u32>) {
             // resultMatrix.size = vec2<f32>(firstMatrix.size.x, secondMatrix.size.y);
             
             // let resultCell : vec2<u32> = vec2<u32>(global_id.x, global_id.y);
@@ -25,7 +25,9 @@ export default
             // resultMatrix.value[global_id.x] = f32(global_id);
             // resultMatrix.value[global_id.x] = f32(global_id.x);
             // resultMatrix.value[global_id.x] = f32(global_id.x);
-            resultMatrix.value[global_id.x] = firstMatrix.value[global_id.x] * f32(2);
+            
+            // result[0] = data.value[global_id.x] * f32(2);
+            result.value[0] = f32(55);
           }
 `
 
