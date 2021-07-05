@@ -6,7 +6,6 @@ export default
       chien : f32;
     };
 
-    // [[block]] 
     struct Line {
       time : u32;
       open : f32;
@@ -51,7 +50,12 @@ export default
 
       // result.value[0] = global_id.x;
       
-      result.value[global_id.x] = data.value[global_id.x].open;
+      for(var i: i32 = 0; i < 10000; i = i + 1) {
+        if (data.value[i].open > f32(40000)){
+          result.value[global_id.x] = f32(12);
+        }
+      }
+
 
       // for(var i: i32 = 0; i < 10000; i = i + 1) {
       //   if (data.value[i] > f32(35233)){
