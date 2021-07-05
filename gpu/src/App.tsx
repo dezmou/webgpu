@@ -40,6 +40,12 @@ class Trade {
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
     });
 
+    // Uniform buffer
+    const gpuParamsBuffer = this.device.createBuffer({
+      size: 64,
+      usage: GPUBufferUsage.UNIFORM
+    });
+
     const bindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
@@ -54,6 +60,13 @@ class Trade {
           visibility: GPUShaderStage.COMPUTE,
           buffer: {
             type: "storage" as GPUBufferBindingType
+          }
+        },
+        {
+          binding : 2,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: "uniform" as GPUBufferBindingType
           }
         }
       ]
@@ -73,7 +86,14 @@ class Trade {
           resource: {
             buffer: gpuResBuffer
           }
+        },
+        {
+          binding: 2,
+          resource: {
+            buffer: gpuParamsBuffer
+          }
         }
+
       ]
     });
 
@@ -92,7 +112,6 @@ class Trade {
     });
 
     const resLength = 64;
-
     const commandEncoder = this.device.createCommandEncoder();
     const passEncoder = commandEncoder.beginComputePass();
     passEncoder.setPipeline(computePipeline);
@@ -124,6 +143,10 @@ class Trade {
     const arrayBuffer = gpuReadBuffer.getMappedRange();
     console.log(new Float32Array(arrayBuffer));
   }
+
+  async bake(){
+
+  }
 }
 
 // declare var navigator: any;
@@ -138,9 +161,7 @@ function App() {
     (async () => {
       const trade = new Trade();
       await trade.loadData();
-
       await trade.initGpu();
-      console.log(trade.data);
 
       return;
       // const adapter = await navigator.gpu.requestAdapter();
