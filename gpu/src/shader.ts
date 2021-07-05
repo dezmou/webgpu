@@ -1,11 +1,20 @@
 export default
     `
+    
+    [[block]] struct Params {
+      lapin : f32;
+      chien : f32;
+    };
+
+    
     [[block]] struct Data {
       value: array<f32>;
     };
 
     [[group(0), binding(0)]] var<storage, read> data : Data;
     [[group(0), binding(1)]] var<storage, write> result : Data;
+    [[group(0), binding(2)]] var<uniform> params : Params;
+
           
     [[stage(compute), workgroup_size(32,32)]] fn main([[builtin(global_invocation_id)]] global_id : vec3<u32>) {
       // resultMatrix.size = vec2<f32>(firstMatrix.size.x, secondMatrix.size.y);
@@ -26,7 +35,17 @@ export default
       // resultMatrix.value[global_id.x] = f32(global_id.x);
       
       // result[0] = data.value[global_id.x] * f32(2);
-      result.value[0] = data.value[1];
+      // result.value[0] = data.value[1];
+
+      // result.value[0] = global_id.x;
+          result.value[global_id.x] = f32(65);
+      
+      // for(var i: i32 = 0; i < 2000000; i = i + 1) {
+      //   if (data.value[global_id.x] > f32(3000)){
+      //     // result.value[0] = data.value[global_id.x];
+      //     result.value[global_id.x] = f32(65);
+      //   }
+      // }
     }
 `
 

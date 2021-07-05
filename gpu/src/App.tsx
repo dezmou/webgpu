@@ -3,10 +3,17 @@ import { useEffect } from "react"
 import code from './shader';
 import './App.css';
 
-class Trade {
+class GPUComputer {
   data!: ArrayBuffer;
 
   device!: GPUDevice;
+
+  computePipeline!: GPUComputePipeline;
+
+  gpuParamsBuffer!: GPUBuffer
+  gpuResBuffer!: GPUBuffer;
+
+  bindGroup!: any;
 
   constructor() {
 
@@ -15,6 +22,7 @@ class Trade {
   async loadData() {
     const res = await fetch("./data")
     this.data = await res.arrayBuffer()
+    console.log("Data loaded");
   }
 
   async initGpu() {
@@ -35,15 +43,15 @@ class Trade {
     gpuDataBuffer.unmap();
 
     // Result buffer
-    const gpuResBuffer = this.device.createBuffer({
-      size: 64,
+    this.gpuResBuffer = this.device.createBuffer({
+      size: 512 * 4,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
     });
 
     // Uniform buffer
-    const gpuParamsBuffer = this.device.createBuffer({
+    this.gpuParamsBuffer = this.device.createBuffer({
       size: 64,
-      usage: GPUBufferUsage.UNIFORM
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
 
     const bindGroupLayout = this.device.createBindGroupLayout({
@@ -63,7 +71,7 @@ class Trade {
           }
         },
         {
-          binding : 2,
+          binding: 2,
           visibility: GPUShaderStage.COMPUTE,
           buffer: {
             type: "uniform" as GPUBufferBindingType
@@ -72,7 +80,7 @@ class Trade {
       ]
     });
 
-    const bindGroup = this.device.createBindGroup({
+    this.bindGroup = this.device.createBindGroup({
       layout: bindGroupLayout,
       entries: [
         {
@@ -84,16 +92,15 @@ class Trade {
         {
           binding: 1,
           resource: {
-            buffer: gpuResBuffer
+            buffer: this.gpuResBuffer
           }
         },
         {
           binding: 2,
           resource: {
-            buffer: gpuParamsBuffer
+            buffer: this.gpuParamsBuffer
           }
         }
-
       ]
     });
 
@@ -101,7 +108,7 @@ class Trade {
       code
     });
 
-    const computePipeline = this.device.createComputePipeline({
+    this.computePipeline = this.device.createComputePipeline({
       layout: this.device.createPipelineLayout({
         bindGroupLayouts: [bindGroupLayout]
       }),
@@ -111,12 +118,17 @@ class Trade {
       }
     });
 
-    const resLength = 64;
+  }
+
+  async bake(params: number[]) {
+    const resLength = 512 * 4;
+    const time = performance.now();
+    this.device.queue.writeBuffer(this.gpuParamsBuffer, 0, new Float32Array(params))
     const commandEncoder = this.device.createCommandEncoder();
     const passEncoder = commandEncoder.beginComputePass();
-    passEncoder.setPipeline(computePipeline);
-    passEncoder.setBindGroup(0, bindGroup);
-    passEncoder.dispatch(1 /* x */, 1 /*y*/);
+    passEncoder.setPipeline(this.computePipeline);
+    passEncoder.setBindGroup(0, this.bindGroup);
+    passEncoder.dispatch(32 /* x */, 32 /*y*/);
     passEncoder.endPass();
 
     // Get a GPU buffer for reading in an unmapped state.
@@ -127,7 +139,7 @@ class Trade {
 
     // Encode commands for copying buffer to buffer.
     commandEncoder.copyBufferToBuffer(
-      gpuResBuffer /* source buffer */,
+      this.gpuResBuffer /* source buffer */,
       0 /* source offset */,
       gpuReadBuffer /* destination buffer */,
       0 /* destination offset */,
@@ -142,194 +154,18 @@ class Trade {
     await gpuReadBuffer.mapAsync(GPUMapMode.READ);
     const arrayBuffer = gpuReadBuffer.getMappedRange();
     console.log(new Float32Array(arrayBuffer));
-  }
-
-  async bake(){
-
+    console.log(performance.now() - time);
   }
 }
-
-// declare var navigator: any;
-// declare var GPUBufferUsage: any;
-// declare var GPUMapMode: any;
-// declare var GPUShaderStage: any;
-// declare var GPUMapMode: any;
-// declare var GPUMapMode: any;
 
 function App() {
   useEffect(() => {
     (async () => {
-      const trade = new Trade();
+      const trade = new GPUComputer();
       await trade.loadData();
       await trade.initGpu();
-
-      return;
-      // const adapter = await navigator.gpu.requestAdapter();
-      // if (!adapter) {
-      //   console.log("Failed to get GPU adapter.");
-      //   return;
-      // }
-      // const device = await adapter.requestDevice();
-
-      // // First Matrix
-
-      // const firstMatrix = new Float32Array([
-      //   10,
-      //   11,
-      //   12,
-      //   13,
-      //   14,
-      //   15,
-      //   16,
-      //   17,
-      //   18,
-      //   19
-      // ]);
-
-      // const gpuBufferFirstMatrix = device.createBuffer({
-      //   mappedAtCreation: true,
-      //   size: firstMatrix.byteLength,
-      //   usage: GPUBufferUsage.STORAGE
-      // });
-      // const arrayBufferFirstMatrix = gpuBufferFirstMatrix.getMappedRange();
-      // new Float32Array(arrayBufferFirstMatrix).set(firstMatrix);
-      // gpuBufferFirstMatrix.unmap();
-
-      // // Second Matrix
-
-      // // const secondMatrix = new Float32Array([
-      // //   1,
-      // //   1,
-      // //   1,
-      // //   1,
-      // //   1,
-      // //   1,
-      // //   1,
-      // //   1,
-      // //   1,
-      // //   1
-      // // ]);
-
-      // // const gpuBufferSecondMatrix = device.createBuffer({
-      // //   mappedAtCreation: true,
-      // //   size: secondMatrix.byteLength,
-      // //   usage: GPUBufferUsage.STORAGE
-      // // });
-      // // const arrayBufferSecondMatrix = gpuBufferSecondMatrix.getMappedRange();
-      // // new Float32Array(arrayBufferSecondMatrix).set(secondMatrix);
-      // // gpuBufferSecondMatrix.unmap();
-
-      // // Result Matrix
-      // // const resultMatrixBufferSize =
-      // //   Float32Array.BYTES_PER_ELEMENT * (2 + firstMatrix[0] * secondMatrix[1]);
-      // const resultMatrixBuffer = device.createBuffer({
-      //   size: firstMatrix.byteLength,
-      //   usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
-      // });
-
-      // // Bind group layout and bind group
-
-      // const bindGroupLayout = device.createBindGroupLayout({
-      //   entries: [
-      //     {
-      //       binding: 0,
-      //       visibility: GPUShaderStage.COMPUTE,
-      //       buffer: {
-      //         type: "read-only-storage"
-      //       }
-      //     },
-      //     // {
-      //     //   binding: 1,
-      //     //   visibility: GPUShaderStage.COMPUTE,
-      //     //   buffer: {
-      //     //     type: "read-only-storage"
-      //     //   }
-      //     // },
-      //     {
-      //       binding: 1,
-      //       visibility: GPUShaderStage.COMPUTE,
-      //       buffer: {
-      //         type: "storage"
-      //       }
-      //     }
-      //   ]
-      // });
-
-      // const bindGroup = device.createBindGroup({
-      //   layout: bindGroupLayout,
-      //   entries: [
-      //     {
-      //       binding: 0,
-      //       resource: {
-      //         buffer: gpuBufferFirstMatrix
-      //       }
-      //     },
-      //     // {
-      //     //   binding: 1,
-      //     //   resource: {
-      //     //     buffer: gpuBufferSecondMatrix
-      //     //   }
-      //     // },
-      //     {
-      //       binding: 1,
-      //       resource: {
-      //         buffer: resultMatrixBuffer
-      //       }
-      //     }
-      //   ]
-      // });
-
-      // // Compute shader code
-
-      // const shaderModule = device.createShaderModule({
-      //   code
-      // });
-
-      // // Pipeline setup
-
-      // const computePipeline = device.createComputePipeline({
-      //   layout: device.createPipelineLayout({
-      //     bindGroupLayouts: [bindGroupLayout]
-      //   }),
-      //   compute: {
-      //     module: shaderModule,
-      //     entryPoint: "main"
-      //   }
-      // });
-
-      // // Commands submission
-
-      // const commandEncoder = device.createCommandEncoder();
-
-      // const passEncoder = commandEncoder.beginComputePass();
-      // passEncoder.setPipeline(computePipeline);
-      // passEncoder.setBindGroup(0, bindGroup);
-      // passEncoder.dispatch(firstMatrix.byteLength /* x */, 1/*y*/);
-      // passEncoder.endPass();
-
-      // // Get a GPU buffer for reading in an unmapped state.
-      // const gpuReadBuffer = device.createBuffer({
-      //   size: firstMatrix.byteLength,
-      //   usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
-      // });
-
-      // // Encode commands for copying buffer to buffer.
-      // commandEncoder.copyBufferToBuffer(
-      //   resultMatrixBuffer /* source buffer */,
-      //   0 /* source offset */,
-      //   gpuReadBuffer /* destination buffer */,
-      //   0 /* destination offset */,
-      //   firstMatrix.byteLength, /* size */
-      // );
-
-      // // Submit GPU commands.
-      // const gpuCommands = commandEncoder.finish();
-      // device.queue.submit([gpuCommands]);
-
-      // // Read buffer.
-      // await gpuReadBuffer.mapAsync(GPUMapMode.READ);
-      // const arrayBuffer = gpuReadBuffer.getMappedRange();
-      // console.log(new Float32Array(arrayBuffer));
+      await trade.bake([58]);
+      // await trade.bake([22]);
     })()
 
   }, [])
@@ -341,3 +177,5 @@ function App() {
 }
 
 export default App;
+
+// 2329881 lines
